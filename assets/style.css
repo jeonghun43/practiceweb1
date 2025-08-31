@@ -4,6 +4,7 @@ body {
     padding: 0;
   }
   .wrap {
+    color:brown;
     max-width: 1000px;
     margin: 0 auto;
     padding: 20px;
