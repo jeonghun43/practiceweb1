@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>비트코인 지표 분석 MVP</title>
   <link rel="stylesheet" href="assets/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="wrap">
@@ -33,50 +32,18 @@
       <h2>요약</h2>
       <div id="summaryContent"></div>
     </section>
-
-    <!-- 라인차트 -->
-    <section>
-      <h2>라인 차트</h2>
-      <canvas id="lineChart"></canvas>
-    </section>
-
-    <!-- 산점도 -->
-    <section>
-      <h2>산점도 (BTC vs 다른 지표)</h2>
-      <label for="scatterMetric">지표 선택:</label>
-      <select id="scatterMetric"></select>
-      <canvas id="scatterChart"></canvas>
-    </section>
-
-    <!-- 시차상관 -->
-    <section>
-      <h2>시차 상관</h2>
-      <table id="lagTable" border="1">
-        <thead>
-          <tr><th>Pair</th><th>Best Lag</th><th>Correlation</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </section>
   </div>
 
   <script>
-    const lineCtx = document.getElementById('lineChart').getContext('2d');
-    const scatterCtx = document.getElementById('scatterChart').getContext('2d');
-    let lineChart, scatterChart;
-
     document.getElementById('loadBtn').addEventListener('click', async () => {
       const dataset = document.getElementById('dataset').value;
       const days = document.getElementById('days').value;
-      const file = `/data/${dataset}-${days}.json`;
+      const file = `data/${dataset}-${days}.json`; // 상대경로
 
       try {
         const res = await fetch(file);
         const data = await res.json();
         renderSummary(data);
-        renderLineChart(data);
-        populateScatterOptions(data);
-        renderLagTable(data);
       } catch (e) {
         alert("데이터 로드 실패: " + e);
       }
@@ -89,65 +56,6 @@
         const p = document.createElement("p");
         p.textContent = s;
         summaryDiv.appendChild(p);
-      });
-    }
-
-    function renderLineChart(data) {
-      const labels = data.series.btc.map(d => d.date);
-      const datasets = Object.keys(data.series).map(metric => ({
-        label: metric,
-        data: data.series[metric].map(d => d.value),
-        borderWidth: 2,
-        fill: false
-      }));
-
-      if (lineChart) lineChart.destroy();
-      lineChart = new Chart(lineCtx, {
-        type: 'line',
-        data: { labels, datasets },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
-    }
-
-    function populateScatterOptions(data) {
-      const select = document.getElementById('scatterMetric');
-      select.innerHTML = "";
-      data.meta.metrics.forEach(m => {
-        if (m !== "btc") {
-          const opt = document.createElement("option");
-          opt.value = m;
-          opt.textContent = m;
-          select.appendChild(opt);
-        }
-      });
-      select.onchange = () => renderScatterChart(data, select.value);
-      renderScatterChart(data, select.value);
-    }
-
-    function renderScatterChart(data, metric) {
-      const btcSeries = data.series.btc;
-      const otherSeries = data.series[metric];
-      const points = btcSeries.map((d, i) => ({
-        x: d.value,
-        y: otherSeries[i]?.value || null
-      })).filter(p => p.y !== null);
-
-      if (scatterChart) scatterChart.destroy();
-      scatterChart = new Chart(scatterCtx, {
-        type: 'scatter',
-        data: { datasets: [{ label: `BTC vs ${metric}`, data: points }] },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
-    }
-
-    function renderLagTable(data) {
-      const tbody = document.getElementById('lagTable').querySelector('tbody');
-      tbody.innerHTML = "";
-      const entries = Object.entries(data.lag).slice(0,2);
-      entries.forEach(([pair, info]) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${pair}</td><td>${info.bestLag}</td><td>${info.corr}</td>`;
-        tbody.appendChild(tr);
       });
     }
   </script>
